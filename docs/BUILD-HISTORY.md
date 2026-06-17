@@ -72,11 +72,23 @@ This closes the "import path is `generated/go`" gap from the v1 review.
 
 ---
 
+## v4 — Hardening and First Release (June 2026)
+
+**Problem:** The contract was correct but not yet defensible or shippable. The v1 review had flagged five gaps; v3 closed the import-path one, leaving four: no lint pass, no TypeScript compile check, no semver, and a confused note about the Go version. With the repo about to gain a real remote and downstream consumers, these are the difference between a contract others can safely depend on and one that breaks silently.
+
+**What shipped:**
+
+- `make verify` now runs `go vet ./...` and `npx tsc --noEmit --strict ts/message.ts ts/constants.ts` in addition to the build and the schema-drift diff. CI invokes `make verify`, so both checks run on every push and PR. The TypeScript check matters most: `json-schema-to-typescript` output was previously only diffed, never compiled, so invalid TS would have surfaced only when a consumer imported it.
+- `go.mod` declares `go 1.26` rather than `go 1.26.2`. The earlier note that "1.26.2 is not stable" was simply wrong — 1.26.2 is released and is the locally installed toolchain. The real reason to drop the patch is that the `go` directive sets a minimum-Go floor for consumers, and a patch-level floor needlessly excludes anyone on 1.26.0 or 1.26.1. For a contract library that exists to be imported widely, the floor should be as low as the language features require, which is `go 1.26`.
+- The GitHub remote was created **private** and the initial history pushed, so the `validate` workflow runs in real CI for the first time rather than only being replicated locally.
+- Tagged `v0.1.0` to establish semver before any downstream consumer pins a version. The `0.x` line signals the contract may still move; the practice of tagging at all is what matters now.
+
+**What it deliberately omits:** No golangci-lint, only `go vet`. For a single generated struct plus two constants, `vet` is the right amount of static checking; a full linter config would be ceremony with nothing to catch. It can be added if the repo grows hand-written Go.
+
+---
+
 ## Open / Upcoming
 
-- Create the GitHub remote and push so the `validate` workflow runs in CI for real
-- Plan 1: add `urd-contract` as a Go dependency to the first Ratatoskr bridge
-- Add `go vet` (or golangci-lint) to CI and/or `make verify`
-- Add `npx tsc --noEmit --strict` to `make verify` so TypeScript compile errors are caught in CI
-- Tag `v0.1.0` to establish semver before downstream consumers appear
-- Pin `go.mod` to a released Go version (1.26.2 is not stable)
+- Plan 1: add `urd-contract` as a Go dependency to the first Ratatoskr bridge (the first real consumer, which will exercise the published contract end to end)
+- Watch the first CI run on the new remote and confirm the `validate` workflow passes against a real runner rather than only locally
+- Revisit linting (golangci-lint) only if the repo grows hand-written Go beyond the two constants

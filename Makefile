@@ -10,4 +10,6 @@ generate:
 
 verify:
 	go build ./...
+	go vet ./...
+	npx tsc --noEmit --strict ts/message.ts ts/constants.ts
 	@git diff --exit-code message.go ts/message.ts || (echo "generated files are out of sync with schema; run make generate" && exit 1)

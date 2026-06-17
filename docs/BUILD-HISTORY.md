@@ -54,6 +54,24 @@ The earlier claim that go-jsonschema "couldn't" produce the wanted shape was als
 
 ---
 
+## v3 — Flattened Layout (June 2026)
+
+**Problem:** Consumers had to import `github.com/mariusw/urd-contract/generated/go`. The word "generated" in a public import path is redundant signaling, the generated-ness is already carried by each file's `Code generated ... DO NOT EDIT` header, and it leaks into the one place it has a cosmetic cost and no functional benefit.
+
+**Design decision:** Drop `generated/` entirely rather than rename it. The Go package moves to the module root, which is Go's own convention for a module's primary package and yields the clean `import "github.com/mariusw/urd-contract"` used as `contract.Message`. TypeScript moves to `ts/`, because TS has no root-package convention and mixing `.ts` beside `.go` at the root just crowds two languages into one directory; TS's path is not a public import identifier, so a subdirectory there costs nothing. The asymmetry (Go at root, TS in `ts/`) reflects each ecosystem's norm rather than being arbitrary.
+
+The rejected alternative was keeping the files under `generated/` and adding a hand-written root package that re-exports them with type aliases. That would reintroduce a hand-maintained surface tracking the schema, the exact second-source-of-truth trap removed in v2. Moving the files has no such cost.
+
+**What shipped:**
+
+- `message.go` and `constants.go` at the module root, package `contract`. Import path is now `github.com/mariusw/urd-contract`.
+- `message.ts` and `constants.ts` under `ts/`.
+- `generated/` deleted. Makefile `generate` writes to the new paths; `verify` diffs `message.go` and `ts/message.ts`.
+
+This closes the "import path is `generated/go`" gap from the v1 review.
+
+---
+
 ## Open / Upcoming
 
 - Create the GitHub remote and push so the `validate` workflow runs in CI for real
@@ -62,4 +80,3 @@ The earlier claim that go-jsonschema "couldn't" produce the wanted shape was als
 - Add `npx tsc --noEmit --strict` to `make verify` so TypeScript compile errors are caught in CI
 - Tag `v0.1.0` to establish semver before downstream consumers appear
 - Pin `go.mod` to a released Go version (1.26.2 is not stable)
-- Revisit Go package layout if root-level Go code is added later

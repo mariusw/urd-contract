@@ -5,9 +5,9 @@
 # from the schema's "title" (Message) rather than the filename; no other shape
 # is imposed. Whatever the generators emit IS the contract.
 generate:
-	$(shell go env GOPATH)/bin/go-jsonschema -p contract -t -o generated/go/message.go message.schema.json
-	npx json-schema-to-typescript message.schema.json -o generated/ts/message.ts
+	$(shell go env GOPATH)/bin/go-jsonschema -p contract -t -o message.go message.schema.json
+	npx json-schema-to-typescript message.schema.json -o ts/message.ts
 
 verify:
 	go build ./...
-	@git diff --exit-code generated/ || (echo "generated files are out of sync with schema; run make generate" && exit 1)
+	@git diff --exit-code message.go ts/message.ts || (echo "generated files are out of sync with schema; run make generate" && exit 1)

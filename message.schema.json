@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Message",
+  "description": "Canonical event published by every Ratatoskr bridge.",
+  "type": "object",
+  "required": [
+    "id",
+    "session_id",
+    "harness",
+    "cwd",
+    "git_branch",
+    "role",
+    "content",
+    "timestamp",
+    "sequence"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Idempotency key. Consumers must treat this as the deduplication key."
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "parent_session_id": {
+      "type": "string",
+      "description": "Set only for subagent sessions. Omitted (not null) when absent."
+    },
+    "harness": {
+      "type": "string",
+      "enum": ["claude-code", "pi"]
+    },
+    "cwd": {
+      "type": "string"
+    },
+    "git_branch": {
+      "type": "string",
+      "description": "Always present on the wire. Detached HEAD is encoded as the sentinel '(detached)'."
+    },
+    "project": {
+      "type": "string",
+      "description": "Derived from cwd at bridge time. May be empty for sessions outside a git repo."
+    },
+    "role": {
+      "type": "string",
+      "enum": ["user", "assistant"]
+    },
+    "content": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sequence": {
+      "type": "integer",
+      "description": "Per-session message order. Assigned by the bridge."
+    }
+  },
+  "additionalProperties": false
+}

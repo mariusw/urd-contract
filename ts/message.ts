@@ -6,7 +6,7 @@
  */
 
 /**
- * Canonical event published by every Ratatoskr bridge.
+ * Canonical event published by every Ratatoskr bridge to NATS subject ratatoskr.messages.
  */
 export interface Message {
   /**
@@ -30,9 +30,8 @@ export interface Message {
   project?: string;
   role: "user" | "assistant";
   content: string;
-  timestamp: string;
   /**
-   * Per-session message order. Assigned by the bridge.
+   * Message production time. Used for ordering within a session — no sequence field exists.
    */
-  sequence: number;
+  timestamp: string;
 }

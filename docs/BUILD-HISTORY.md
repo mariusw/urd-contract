@@ -87,6 +87,24 @@ This closes the "import path is `generated/go`" gap from the v1 review.
 
 ---
 
+## v5 — Drop sequence (June 2026)
+
+**Problem:** The schema contained a `sequence` field — an integer assigned by each bridge to track per-session message order. Analysis of the full system's design during the Plan 0 v3 grilling session revealed that sequence is unnecessary complexity: a session is a single agent process on a single machine, so wall-clock order within a session is reliable and sufficient for ordering. Any consumer that needs to sort messages within a session can sort by `timestamp`. No two sessions share a machine, so there is no cross-session clock ambiguity to resolve via sequence either. Downstream plans (1 through 4) were also authored without sequence as a result of that grilling session — meaning the contract was the only component that still carried it after the decisions crystallised.
+
+There was also a collision between this repo's state and the downstream plan documents. The v3 plans were written against an earlier shape (idiomatic `ID`/`CWD` field casing, plain-string harness/role constants, a `generated/go/` import path) that the repo had moved away from across phases v2 and v3. An attempted fix branch (`fix/align-with-v3-plan`) tried to revert the repo toward the plans, which was the wrong direction: it would have reintroduced the hand-written Go binding problem that v2 diagnosed and removed, and would have broken CI (the Makefile's `generate` target would clobber the hand-written file on every run). The collision doc at `docs/Plan review/plan0-collision.md` in the ratatoskr repo lays out the full analysis. The correct resolution is to drop sequence from the contract (the one change the plans were right about) and update the plan documents to match the contract's actual generated shape rather than revert the contract.
+
+**What shipped:**
+
+- `sequence` removed from `message.schema.json`: dropped from `required` and from `properties`.
+- `message.go` regenerated: `Sequence int` field and its `UnmarshalJSON` required-check are gone. The `timestamp` description now reads "Message production time. Used for ordering within a session — no sequence field exists."
+- `ts/message.ts` regenerated: `sequence: number` removed; same description added to `timestamp`.
+- Top-level schema description updated to mention the NATS subject explicitly.
+- Plans 1 through 4 in the ratatoskr repo are updated to match the contract's actual generated API shape (field names, constant names, import paths).
+
+**What it deliberately does not change:** The generated-output-is-the-contract principle from v2, the flat layout from v3, and the harness/role typed enums. Those decisions are sound and remain. The plan documents are updated to match the contract, not the other way around.
+
+---
+
 ## Open / Upcoming
 
 - Plan 1: add `urd-contract` as a Go dependency to the first Ratatoskr bridge (the first real consumer, which will exercise the published contract end to end)

@@ -7,7 +7,8 @@ import "fmt"
 import "reflect"
 import "time"
 
-// Canonical event published by every Ratatoskr bridge.
+// Canonical event published by every Ratatoskr bridge to NATS subject
+// ratatoskr.messages.
 type Message struct {
 	// Content corresponds to the JSON schema field "content".
 	Content string `json:"content" yaml:"content" mapstructure:"content"`
@@ -34,13 +35,11 @@ type Message struct {
 	// Role corresponds to the JSON schema field "role".
 	Role MessageRole `json:"role" yaml:"role" mapstructure:"role"`
 
-	// Per-session message order. Assigned by the bridge.
-	Sequence int `json:"sequence" yaml:"sequence" mapstructure:"sequence"`
-
 	// SessionId corresponds to the JSON schema field "session_id".
 	SessionId string `json:"session_id" yaml:"session_id" mapstructure:"session_id"`
 
-	// Timestamp corresponds to the JSON schema field "timestamp".
+	// Message production time. Used for ordering within a session — no sequence field
+	// exists.
 	Timestamp time.Time `json:"timestamp" yaml:"timestamp" mapstructure:"timestamp"`
 }
 
@@ -127,9 +126,6 @@ func (j *Message) UnmarshalJSON(value []byte) error {
 	}
 	if _, ok := raw["role"]; raw != nil && !ok {
 		return fmt.Errorf("field role in Message: required")
-	}
-	if _, ok := raw["sequence"]; raw != nil && !ok {
-		return fmt.Errorf("field sequence in Message: required")
 	}
 	if _, ok := raw["session_id"]; raw != nil && !ok {
 		return fmt.Errorf("field session_id in Message: required")

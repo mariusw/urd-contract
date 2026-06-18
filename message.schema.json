@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Message",
-  "description": "Canonical event published by every Ratatoskr bridge.",
+  "description": "Canonical event published by every Ratatoskr bridge to NATS subject ratatoskr.messages.",
   "type": "object",
   "required": [
     "id",
@@ -11,8 +11,7 @@
     "git_branch",
     "role",
     "content",
-    "timestamp",
-    "sequence"
+    "timestamp"
   ],
   "properties": {
     "id": {
@@ -50,11 +49,8 @@
     },
     "timestamp": {
       "type": "string",
-      "format": "date-time"
-    },
-    "sequence": {
-      "type": "integer",
-      "description": "Per-session message order. Assigned by the bridge."
+      "format": "date-time",
+      "description": "Message production time. Used for ordering within a session — no sequence field exists."
     }
   },
   "additionalProperties": false

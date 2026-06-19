@@ -1,15 +1,32 @@
 {
   "name": "urd-contract",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "type": "module",
+  "files": [
+    "dist/",
+    "ts/",
+    "message.schema.json",
+    "message.go",
+    "constants.go",
+    "Makefile",
+    "go.mod",
+    "docs/"
+  ],
+  "exports": {
+    "./message": {
+      "types": "./dist/message.d.ts",
+      "default": "./dist/message.js"
+    },
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "default": "./dist/constants.js"
+    },
+    "./package.json": "./package.json"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "scripts": {
+    "build:ts": "tsc -p tsconfig.build.json",
+    "verify": "make verify"
+  },
   "devDependencies": {
     "json-schema-to-typescript": "^15.0.4",
     "typescript": "^6.0.3"

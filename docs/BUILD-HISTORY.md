@@ -105,6 +105,28 @@ There was also a collision between this repo's state and the downstream plan doc
 
 ---
 
+## v6 - Node runtime surface for TypeScript consumers (June 2026)
+
+**Problem:** The repository called itself the single source of truth, but only the Go half was actually true. Go consumers compile against a real module; TypeScript consumers had nothing to import at runtime. The `ts/` directory held only `.ts` source, the package was `type: "commonjs"` with a `main` pointing at an `index.js` that did not exist, and there was no `exports` map. `make verify` ran `tsc --noEmit`, which stays green because TypeScript resolves a `.js` specifier back to its `.ts` sibling during typechecking, so the gap was invisible to every check we had. A consumer that typechecks `import { NATS_SUBJECT } from "urd-contract/constants"` would compile fine and then crash at runtime, because no shipped JavaScript file backs that import. The pi-bridge plan surfaced this: it is the first TypeScript consumer, it compiles to plain JavaScript run under Node, and that is exactly the case the old layout could not serve.
+
+The deeper point is that this was a contract packaging bug, not a consumer bug. If every TypeScript bridge had to copy constants locally or invent a path alias to work around the missing surface, the contract would have stopped being central, and the runtime values would have splintered into each consumer, which is the wrong dependency direction and the precise failure this repository exists to prevent.
+
+**Design decision:** Expose a real ESM package surface and make the public TypeScript API `urd-contract/message` and `urd-contract/constants`, backed by compiled files under `dist/` and an explicit `exports` map. The `ts/` directory stays as internal source layout and is no longer the consumer-facing path. The package becomes `type: "module"`; no dual CJS build was added, because no consumer needs CommonJS and speculative dual-publishing is debt without a payer. The asymmetry between the two subpaths is intentional and load-bearing: `constants` carries runtime values, so it must emit real JavaScript; `message` exports only a type, so `tsc` emits an essentially empty module (`export {}`), which is correct: a type-only import erases at compile time and needs no runtime backing. That same erasure is why a consumer can `import type` from a package that ships no value JS, and why `constants` cannot rely on it.
+
+Committing `dist/` to git is deliberate. The contract is consumed as a local `file:` dependency, and npm does not run a build step for a linked dependency, so the compiled JavaScript has to already be on disk when a consumer installs. The drift guard in `make verify` was extended to cover `dist/` for the same reason it already covered the generated Go and TS source: a committed artifact that can fall out of sync with its source needs a check that fails loudly. Because `tsc` output is deterministic for a given TypeScript version and `build:ts` runs earlier in `verify`, the guard catches a stale committed `dist/` rather than a transient build difference.
+
+**What shipped:**
+
+- `package.json` switched to `type: "module"` with an `exports` map exposing `./message` and `./constants` (plus `./package.json`); the dead `main: "index.js"` and the placeholder npm-init scaffolding are gone.
+- `tsconfig.build.json` compiles `ts/*.ts` to `dist/*.js` and `dist/*.d.ts` (with declaration maps) under `verbatimModuleSyntax`.
+- `dist/constants.js`, `dist/message.js`, and their declarations are built and committed, so a `file:` consumer resolves the package without running a build.
+- `smoke/runtime-import.mjs` proves `urd-contract/constants` resolves and returns the expected values under plain Node via package self-reference; `smoke/typecheck.ts` (driven by `tsconfig.smoke.json`) proves `urd-contract/message` and `urd-contract/constants` resolve for a `NodeNext` TypeScript consumer.
+- `make verify` now runs `build:ts`, both smoke checks, and a drift guard that includes `dist/`. Go build, `go vet`, and the source typecheck are unchanged.
+
+**What it deliberately omits:** No CJS output, no npm publish, no change to the Go module or the schema. Go consumers are entirely unaffected: they still import `github.com/mariusw/urd-contract`. Future TypeScript consumers should import `urd-contract/message` and `urd-contract/constants` and never reach into `urd-contract/ts/...`, which is no longer public API.
+
+---
+
 ## Open / Upcoming
 
 - Plan 1: add `urd-contract` as a Go dependency to the first Ratatoskr bridge (the first real consumer, which will exercise the published contract end to end)

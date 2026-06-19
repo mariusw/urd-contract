@@ -12,4 +12,7 @@ verify:
 	go build ./...
 	go vet ./...
 	npx tsc --noEmit --strict ts/message.ts ts/constants.ts
-	@git diff --exit-code message.go ts/message.ts || (echo "generated files are out of sync with schema; run make generate" && exit 1)
+	npm run build:ts
+	node smoke/runtime-import.mjs
+	npx tsc -p tsconfig.smoke.json
+	@git diff --exit-code message.go ts/message.ts dist/ || (echo "generated or built files are out of sync; run make generate and npm run build:ts, then commit dist/" && exit 1)

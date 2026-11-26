@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Event",
+  "description": "Envelope for every event published to the NATS subject tree events.>. A CloudEvents 1.0 event in structured JSON mode, with a stricter profile: time, subject and dataversion are required, and source, subject and type are restricted to NATS-safe tokens so they can form the subject events.<source>.<subject>.<type>. See docs/events.md.",
+  "type": "object",
+  "required": [
+    "specversion",
+    "id",
+    "source",
+    "subject",
+    "type",
+    "time",
+    "dataversion",
+    "data"
+  ],
+  "properties": {
+    "specversion": {
+      "type": "string",
+      "enum": ["1.0"],
+      "description": "CloudEvents specification version. Always 1.0."
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Globally unique event identifier and idempotency key. Content-derived hash when the event has a natural identity, so a retried publish deduplicates; otherwise a UUIDv7. Also sent as the Nats-Msg-Id header so JetStream drops duplicates inside its window."
+    },
+    "source": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "The component that published the event, e.g. heimdall, urd, eir. Equals the second subject token, and the publisher's NATS user may publish only under events.<source>.>, so the value is enforced by the broker."
+    },
+    "subject": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "The service the event is about. Equal to source when a service reports on itself; different when a collector reports on something else, e.g. source heimdall, subject exo."
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+      "description": "What happened, as dotted lower-case segments ending in a past-tense verb: request.served, status.changed, metric.observed. Each segment becomes a subject token."
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the event happened (not when it was published), RFC 3339 in UTC with an upper-case T and Z, millisecond precision."
+    },
+    "dataversion": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version of the data payload's shape for this type. Starts at 1; bump on any change a consumer could notice. A CloudEvents extension attribute."
+    },
+    "correlationid": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional. Joins related events across services, e.g. an agent session id or an upstream request id. A CloudEvents extension attribute."
+    },
+    "host": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Optional. The machine the event was produced on, by its short role name. A CloudEvents extension attribute."
+    },
+    "data": {
+      "type": "object",
+      "description": "The payload: metadata only, never prompt or response bodies or secrets. Shape is defined per (type, dataversion) in docs/events.md. Keys are snake_case; quantities carry their unit as a suffix (_ms, _bytes, _pct)."
+    }
+  },
+  "additionalProperties": false
+}

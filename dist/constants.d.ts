@@ -7,6 +7,8 @@ export declare const ROLE_ASSISTANT = "assistant";
 export declare const EVENTS_SUBJECT_ROOT = "events";
 export declare const EVENTS_STREAM = "EVENTS";
 export declare const EVENT_SPEC_VERSION = "1.0";
+export declare const EVENT_TOKEN_PATTERN: RegExp;
+export declare const EVENT_TYPE_PATTERN: RegExp;
 /** Returns the NATS subject for an event: events.<source>.<subject>.<type>. Throws on values the schema rejects. */
 export declare function eventSubject(event: {
     source: string;

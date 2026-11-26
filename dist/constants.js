@@ -9,8 +9,8 @@ export const EVENTS_SUBJECT_ROOT = "events";
 export const EVENTS_STREAM = "EVENTS";
 export const EVENT_SPEC_VERSION = "1.0";
 // Mirror event.schema.json. A dot or wildcard in a token would change routing.
-const EVENT_TOKEN_PATTERN = /^[a-z][a-z0-9-]*$/;
-const EVENT_TYPE_PATTERN = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/;
+export const EVENT_TOKEN_PATTERN = /^[a-z][a-z0-9-]*$/;
+export const EVENT_TYPE_PATTERN = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/;
 /** Returns the NATS subject for an event: events.<source>.<subject>.<type>. Throws on values the schema rejects. */
 export function eventSubject(event) {
     if (!EVENT_TOKEN_PATTERN.test(event.source))

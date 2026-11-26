@@ -1,4 +1,24 @@
-import { DETACHED_BRANCH, HARNESS_PI, NATS_SUBJECT, eventSubject } from "urd-contract/constants";
+import { readFileSync } from "node:fs";
+import {
+  DETACHED_BRANCH,
+  EVENT_TOKEN_PATTERN,
+  EVENT_TYPE_PATTERN,
+  HARNESS_PI,
+  NATS_SUBJECT,
+  eventSubject,
+} from "urd-contract/constants";
+
+// The TypeScript patterns are copies of the schema's; keep them identical.
+const schema = JSON.parse(readFileSync(new URL("../event.schema.json", import.meta.url), "utf8"));
+for (const [property, pattern] of [
+  ["source", EVENT_TOKEN_PATTERN],
+  ["subject", EVENT_TOKEN_PATTERN],
+  ["type", EVENT_TYPE_PATTERN],
+]) {
+  if (pattern.source !== schema.properties[property].pattern) {
+    throw new Error(`pattern for ${property}: ts/constants.ts has ${pattern.source}, event.schema.json has ${schema.properties[property].pattern}`);
+  }
+}
 
 if (NATS_SUBJECT !== "ratatoskr.messages") {
   throw new Error(`unexpected NATS_SUBJECT: ${NATS_SUBJECT}`);

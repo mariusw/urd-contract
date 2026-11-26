@@ -14,6 +14,6 @@ jobs:
         with:
           node-version: "20"
       - run: npm ci
-      - run: go install github.com/atombender/go-jsonschema@latest
+      - run: make tools
       - run: make generate
       - run: make verify

@@ -441,7 +441,7 @@
         <h3>v7 - Event envelope for the stack-wide event log (November 2026)</h3>
         <span class="when">November 2026</span>
       </div>
-      <span class="status inflight">in review</span>
+      <span class="status shipped">shipped · v0.3.0</span>
       <p class="lead">A second contract beside Message: the envelope every service uses to publish events into one permanent JetStream stream.</p>
       <div class="point-list">
         <div class="point">
@@ -464,12 +464,41 @@
         </div>
       </div>
     </div>
+
+    <div class="phase">
+      <div class="phase-head">
+        <h3>v8 - CI hardening (November 2026)</h3>
+        <span class="when">November 2026</span>
+      </div>
+      <span class="status inflight">in review</span>
+      <p class="lead">Closing the holes v7 opened or exposed, so the checks guard what the repository now holds.</p>
+      <div class="point-list">
+        <div class="point">
+          <div class="label">Problem</div>
+          <p>CI installed the Go generator at <code>@latest</code>, so a new generator release could fail the drift guard on an unrelated change, or change the generated contract without anyone editing a schema. v7 added hand-written Go (<code>EventSubject</code>) that copies the schema's patterns into Go and TypeScript, guarded only by a comment. <code>docs/events.md</code> holds a full example event that nothing checked against the schema. And <code>go vet</code> does not check formatting, which mattered little while all Go was generated.</p>
+        </div>
+        <div class="point">
+          <div class="label">Design decisions</div>
+          <p>The generator version lives in the Makefile, not only in CI: <code>make tools</code> installs it, and <code>make generate</code> refuses to run with any other version. Local and CI generation therefore cannot disagree, which a CI-only pin would not guarantee.</p>
+          <p>The doc examples are validated by decoding them into the generated <code>Event</code> type and building their subject, not with a separate JSON Schema validator. That avoids a new dependency, and the generated decoder already enforces required fields, the <code>specversion</code> enum and the patterns. What it misses, unknown top-level attributes, is the documented limitation from v7.</p>
+          <p>The TypeScript patterns are exported so the smoke check can compare them with the schema. Both parity checks were confirmed to fail by deliberately breaking a pattern.</p>
+        </div>
+        <div class="point">
+          <div class="label">What shipped</div>
+          <ul><li><code>GO_JSONSCHEMA_VERSION</code> pinned at v0.23.1, a <code>tools</code> target, a version check in <code>generate</code>, and CI running <code>make tools</code>.</li> <li><code>gofmt -l</code> as the first step of <code>make verify</code>.</li> <li><code>schema_parity_test.go</code>: the Go patterns equal the schema's. The smoke check does the same for <code>EVENT_TOKEN_PATTERN</code> and <code>EVENT_TYPE_PATTERN</code>, now exported from <code>urd-contract/constants</code>.</li> <li><code>docs_examples_test.go</code>: every <code>json</code> block in <code>docs/events.md</code> decodes as an <code>Event</code> and yields a valid subject. It fails if the doc has no examples, so it cannot pass vacuously.</li></ul>
+        </div>
+        <div class="point">
+          <div class="label">What it deliberately omits</div>
+          <p>Breaking-change detection, shared conformance fixtures, consumer builds and tag-to-version agreement. They are planned for this repository in the stack-wide CI plan (mariusw/homelab#7) and wait until there are consumers and releases to protect. The Node version in CI stays as it is.</p>
+        </div>
+      </div>
+    </div>
   </section>
   <section>
     <h2>Open / Upcoming</h2>
     <div class="open-list">
       <div class="open-item"><div class="dot"></div><p>Plan 1: add <code>urd-contract</code> as a Go dependency to the first Ratatoskr bridge (the first real consumer, which will exercise the published contract end to end)</p></div>
-      <div class="open-item"><div class="dot"></div><p>Watch the first CI run on the new remote and confirm the <code>validate</code> workflow passes against a real runner rather than only locally</p></div>
+      <div class="open-item"><div class="dot"></div><p>Contract checks from mariusw/homelab#7: breaking-change detection against <code>main</code>, shared conformance fixtures for both bindings, consumer builds, and agreement between the git tag and <code>package.json</code>'s version (today <code>1.0.0</code> against <code>v0.x</code> tags)</p></div>
       <div class="open-item"><div class="dot"></div><p>Revisit linting (golangci-lint) only if the repo grows hand-written Go beyond the constants and <code>EventSubject</code></p></div>
       <div class="open-item"><div class="dot"></div><p>Decide whether the repository should be renamed now that it holds the stack-wide event contract as well as Message</p></div>
       <div class="open-item"><div class="dot"></div><p>Promote Heimdall's draft event types to stable when Heimdall starts publishing (mariusw/homelab#6, phase 2)</p></div>

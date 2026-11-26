@@ -1,6 +1,6 @@
 # Session ledger: event envelope contract
 
-_Last reconciled: 2026-11-26_
+_Last reconciled: 2026-11-27_
 
 ## Context
 
@@ -9,7 +9,7 @@ First step of the stack-wide event log (mariusw/homelab#6): persist metadata fro
 ## Current state
 
 - Done on `feat/event-envelope` (worktree `~/worktrees/urd-contract/event-envelope`, branched from `origin/main`): `event.schema.json` with generated `event.go` and `ts/event.ts`, `subject.go` (`EventSubject`) with tests, TypeScript `eventSubject` and constants, smoke checks, `docs/events.md`, BUILD-HISTORY v7 entry. `make verify` passes locally.
-- Not pushed; no PR yet. Waiting for Marius to review the draft.
+- Merged in mariusw/urd-contract#1 and tagged v0.3.0. Worktree and branch removed. CI follow-ups continue on `chore/ci-hardening`.
 
 ## Decisions
 
@@ -23,8 +23,8 @@ First step of the stack-wide event log (mariusw/homelab#6): persist metadata fro
 
 ## Next steps
 
-1. Marius reviews the envelope and `docs/events.md`.
-2. Push, open PR, watch CI, merge on Marius's word; tag a release.
+1. Done: review, PR #1, merge, tag v0.3.0.
+2. Done: CI hardening moved to its own branch (see docs/sessions/chore/ci-hardening.md).
 3. Homelab: apply NATS access control from `docs/nats.md`, add an `events-heimdall`-style user per publisher, create the `EVENTS` stream (size decision against dozer's disk and the 10 GB file-store limit), record it in `docs/nats.md`.
 4. Deferred: Heimdall publishes `status.changed` and `metric.observed` (after the redesign); service-published metric descriptors (mariusw/heimdall#9); analytical store choice.
 

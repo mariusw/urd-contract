@@ -435,13 +435,44 @@
         </div>
       </div>
     </div>
+
+    <div class="phase">
+      <div class="phase-head">
+        <h3>v7 - Event envelope for the stack-wide event log (November 2026)</h3>
+        <span class="when">November 2026</span>
+      </div>
+      <span class="status inflight">in review</span>
+      <p class="lead">A second contract beside Message: the envelope every service uses to publish events into one permanent JetStream stream.</p>
+      <div class="point-list">
+        <div class="point">
+          <div class="label">Problem</div>
+          <p>The plan is to persist metadata from every part of the stack in one replayable log (mariusw/homelab#6), with JetStream as the system of record and any database as a rebuildable projection. That design makes the start date the only irreversible decision: every day without capture is history lost. Capture cannot start without a shared shape, because a log of ad-hoc payloads cannot be queried later, and the contract has to exist before the first producer, not be retrofitted onto several.</p>
+        </div>
+        <div class="point">
+          <div class="label">Design decisions</div>
+          <p>The envelope adopts CloudEvents 1.0 in structured JSON mode as prior art rather than inventing field names, with a stricter profile: <code>time</code>, <code>subject</code> and the extension <code>dataversion</code> are required, and <code>source</code>, <code>subject</code> and <code>type</code> are restricted to NATS-safe tokens. Those three form the subject <code>events.&lt;source&gt;.&lt;subject&gt;.&lt;type&gt;</code>. The split between <code>source</code> (who published) and <code>subject</code> (what it is about) is what lets a collector such as Heimdall report on third-party services while each publisher's NATS user is limited to <code>events.&lt;source&gt;.&gt;</code>, so the broker enforces provenance.</p>
+          <p>It lives in this repository rather than a new one because the schema-to-bindings tooling, the drift guard and CI already exist here, and speed was the priority. The repository name no longer describes everything it holds; renaming it is a separate, later decision. Message is untouched; Event has no versioning field of Message's kind because <code>dataversion</code> versions each payload type independently.</p>
+          <p><code>EventSubject</code> is the first hand-written Go function in the repository. It exists because a dot or wildcard in a subject token silently changes NATS routing, so the subject must be built in one checked place. Its patterns duplicate the schema's; the tests and the TypeScript twin keep the three in step.</p>
+        </div>
+        <div class="point">
+          <div class="label">What shipped</div>
+          <ul><li><code>event.schema.json</code>, generating <code>event.go</code> and <code>ts/event.ts</code>; <code>make generate</code> and the drift guard cover both contracts.</li> <li><code>EventsSubjectRoot</code> and <code>EventsStream</code> constants, <code>EventSubject</code> in <code>subject.go</code>, and <code>eventSubject</code> plus the same constants in <code>ts/constants.ts</code>.</li> <li><code>subject_test.go</code>; <code>make verify</code> now runs <code>go test</code>. The smoke checks cover the new TypeScript surface, exported as <code>urd-contract/event</code>.</li> <li><code>docs/events.md</code>: the envelope, subject scheme, identity and duplicate handling, payload rules, the recommended <code>EVENTS</code> stream configuration, and an event catalogue with Heimdall's first two types as drafts.</li></ul>
+        </div>
+        <div class="point">
+          <div class="label">What it deliberately omits</div>
+          <p>No producer, no stream and no database: those are Heimdall, homelab and later work. The generated Go does not reject unknown top-level attributes, the same as for Message; the schema stays authoritative and the limitation is documented rather than worked around with hand-written decoding.</p>
+        </div>
+      </div>
+    </div>
   </section>
   <section>
     <h2>Open / Upcoming</h2>
     <div class="open-list">
       <div class="open-item"><div class="dot"></div><p>Plan 1: add <code>urd-contract</code> as a Go dependency to the first Ratatoskr bridge (the first real consumer, which will exercise the published contract end to end)</p></div>
       <div class="open-item"><div class="dot"></div><p>Watch the first CI run on the new remote and confirm the <code>validate</code> workflow passes against a real runner rather than only locally</p></div>
-      <div class="open-item"><div class="dot"></div><p>Revisit linting (golangci-lint) only if the repo grows hand-written Go beyond the two constants</p></div>
+      <div class="open-item"><div class="dot"></div><p>Revisit linting (golangci-lint) only if the repo grows hand-written Go beyond the constants and <code>EventSubject</code></p></div>
+      <div class="open-item"><div class="dot"></div><p>Decide whether the repository should be renamed now that it holds the stack-wide event contract as well as Message</p></div>
+      <div class="open-item"><div class="dot"></div><p>Promote Heimdall's draft event types to stable when Heimdall starts publishing (mariusw/homelab#6, phase 2)</p></div>
     </div>
   </section>
 

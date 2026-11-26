@@ -7,7 +7,10 @@
     "ts/",
     "message.schema.json",
     "message.go",
+    "event.schema.json",
+    "event.go",
     "constants.go",
+    "subject.go",
     "Makefile",
     "go.mod",
     "docs/"
@@ -16,6 +19,10 @@
     "./message": {
       "types": "./dist/message.d.ts",
       "default": "./dist/message.js"
+    },
+    "./event": {
+      "types": "./dist/event.d.ts",
+      "default": "./dist/event.js"
     },
     "./constants": {
       "types": "./dist/constants.d.ts",
